@@ -1,0 +1,36 @@
+{
+  "name": "rivaldashboard",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@ken20020209/ros2d": "^0.11.1",
+    "@tailwindcss/vite": "^4.1.12",
+    "animejs": "^4.1.4",
+    "chart.js": "^4.5.0",
+    "json5": "^2.2.3",
+    "konva": "^9.3.22",
+    "pinia": "^3.0.3",
+    "ros3d": "^1.1.0",
+    "roslib": "^1.4.1",
+    "tailwindcss": "^4.1.12",
+    "three": "^0.180.0",
+    "vue": "^3.5.18",
+    "vue-konva": "^3.2.6",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.2",
+    "@tauri-apps/cli": "^1.6.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "vite": "^7.1.2"
+  }
+}

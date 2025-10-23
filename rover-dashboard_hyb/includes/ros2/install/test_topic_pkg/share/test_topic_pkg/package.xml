@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>test_topic_pkg</name>
+  <version>0.0.1</version>
+  <description>Simple ROS 2 node that publishes and subscribes to the /test topic for the rover dashboard demo.</description>
+  <maintainer email="nopal@example.com">rover-dashboard</maintainer>
+  <license>MIT</license>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

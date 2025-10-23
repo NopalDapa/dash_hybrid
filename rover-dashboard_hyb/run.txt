@@ -1,0 +1,14 @@
+term 1
+pnpm install
+pnpm dev
+
+term 2
+ros2 launch rosbridge_server rosbridge_websocket_launch.xml address:=0.0.0.0 port:=9090
+
+term 3 (test node)
+cd ros2
+ros2 run test_topic_pkg test_node
+
+term 4 (pub cam qos & raw)
+cd cam_min
+ros2 run cam_min camera_publisher --ros-args

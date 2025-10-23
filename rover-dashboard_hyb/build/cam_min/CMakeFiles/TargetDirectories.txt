@@ -1,0 +1,10 @@
+/home/nopal/dash_hybrid/rover-dashboard/build/cam_min/CMakeFiles/uninstall.dir
+/home/nopal/dash_hybrid/rover-dashboard/build/cam_min/CMakeFiles/cam_min_uninstall.dir
+/home/nopal/dash_hybrid/rover-dashboard/build/cam_min/CMakeFiles/camera_publisher.dir
+/home/nopal/dash_hybrid/rover-dashboard/build/cam_min/CMakeFiles/test.dir
+/home/nopal/dash_hybrid/rover-dashboard/build/cam_min/CMakeFiles/edit_cache.dir
+/home/nopal/dash_hybrid/rover-dashboard/build/cam_min/CMakeFiles/rebuild_cache.dir
+/home/nopal/dash_hybrid/rover-dashboard/build/cam_min/CMakeFiles/list_install_components.dir
+/home/nopal/dash_hybrid/rover-dashboard/build/cam_min/CMakeFiles/install.dir
+/home/nopal/dash_hybrid/rover-dashboard/build/cam_min/CMakeFiles/install/local.dir
+/home/nopal/dash_hybrid/rover-dashboard/build/cam_min/CMakeFiles/install/strip.dir
