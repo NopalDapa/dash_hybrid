@@ -1,0 +1,25 @@
+[0.440s] Invoking command in '/home/nfl/Desktop/rosboard-main': PYTHONPATH=/home/nfl/Desktop/rosboard-main/build/rosboard/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/nfl/Desktop/rosboard-main/install/rosboard/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base build/rosboard build --build-base /home/nfl/Desktop/rosboard-main/build/rosboard/build install --record /home/nfl/Desktop/rosboard-main/build/rosboard/install.log --single-version-externally-managed install_data
+[0.608s] running egg_info
+[0.608s] writing build/rosboard/rosboard.egg-info/PKG-INFO
+[0.609s] writing dependency_links to build/rosboard/rosboard.egg-info/dependency_links.txt
+[0.609s] writing entry points to build/rosboard/rosboard.egg-info/entry_points.txt
+[0.609s] writing requirements to build/rosboard/rosboard.egg-info/requires.txt
+[0.609s] writing top-level names to build/rosboard/rosboard.egg-info/top_level.txt
+[0.611s] reading manifest file 'build/rosboard/rosboard.egg-info/SOURCES.txt'
+[0.611s] adding license file 'LICENSE'
+[0.612s] writing manifest file 'build/rosboard/rosboard.egg-info/SOURCES.txt'
+[0.612s] running build
+[0.613s] running build_py
+[0.613s] copying rosboard/rosboard.py -> /home/nfl/Desktop/rosboard-main/build/rosboard/build/lib/rosboard
+[0.615s] running install
+[0.615s] running install_lib
+[0.617s] copying /home/nfl/Desktop/rosboard-main/build/rosboard/build/lib/rosboard/rosboard.py -> /home/nfl/Desktop/rosboard-main/install/rosboard/lib/python3.10/site-packages/rosboard
+[0.617s] byte-compiling /home/nfl/Desktop/rosboard-main/install/rosboard/lib/python3.10/site-packages/rosboard/rosboard.py to rosboard.cpython-310.pyc
+[0.619s] running install_data
+[0.619s] running install_egg_info
+[0.620s] removing '/home/nfl/Desktop/rosboard-main/install/rosboard/lib/python3.10/site-packages/rosboard-1.3.1-py3.10.egg-info' (and everything under it)
+[0.620s] Copying build/rosboard/rosboard.egg-info to /home/nfl/Desktop/rosboard-main/install/rosboard/lib/python3.10/site-packages/rosboard-1.3.1-py3.10.egg-info
+[0.620s] running install_scripts
+[0.634s] Installing rosboard_node script to /home/nfl/Desktop/rosboard-main/install/rosboard/lib/rosboard
+[0.634s] writing list of installed files to '/home/nfl/Desktop/rosboard-main/build/rosboard/install.log'
+[0.652s] Invoked command in '/home/nfl/Desktop/rosboard-main' returned '0': PYTHONPATH=/home/nfl/Desktop/rosboard-main/build/rosboard/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/nfl/Desktop/rosboard-main/install/rosboard/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base build/rosboard build --build-base /home/nfl/Desktop/rosboard-main/build/rosboard/build install --record /home/nfl/Desktop/rosboard-main/build/rosboard/install.log --single-version-externally-managed install_data

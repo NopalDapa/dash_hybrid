@@ -1,0 +1,41 @@
+[0.005s] Invoking command in '/home/nfl/Desktop/rosboard-main/build/rosboard': /usr/bin/cmake /home/nfl/Desktop/rosboard-main -DCATKIN_INSTALL_INTO_PREFIX_ROOT=0 -DCMAKE_INSTALL_PREFIX=/home/nfl/Desktop/rosboard-main/install/rosboard
+[0.012s] [0mCMake Deprecation Warning at CMakeLists.txt:1 (cmake_minimum_required):
+[0.012s]   Compatibility with CMake < 2.8.12 will be removed from a future version of
+[0.012s]   CMake.
+[0.012s] 
+[0.013s]   Update the VERSION argument <min> value or use a ...<max> suffix to tell
+[0.013s]   CMake that the project does not need compatibility with older versions.
+[0.013s] 
+[0.013s] [0m
+[0.057s] -- The C compiler identification is GNU 11.4.0
+[0.105s] -- The CXX compiler identification is GNU 11.4.0
+[0.110s] -- Detecting C compiler ABI info
+[0.168s] -- Detecting C compiler ABI info - done
+[0.176s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.176s] -- Detecting C compile features
+[0.176s] -- Detecting C compile features - done
+[0.179s] -- Detecting CXX compiler ABI info
+[0.246s] -- Detecting CXX compiler ABI info - done
+[0.254s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.254s] -- Detecting CXX compile features
+[0.255s] -- Detecting CXX compile features - done
+[0.263s] [31mCMake Error at CMakeLists.txt:4 (find_package):
+[0.263s]   By not providing "Findcatkin.cmake" in CMAKE_MODULE_PATH this project has
+[0.263s]   asked CMake to find a package configuration file provided by "catkin", but
+[0.263s]   CMake did not find one.
+[0.263s] 
+[0.263s]   Could not find a package configuration file provided by "catkin" with any
+[0.263s]   of the following names:
+[0.264s] 
+[0.264s]     catkinConfig.cmake
+[0.264s]     catkin-config.cmake
+[0.264s] 
+[0.264s]   Add the installation prefix of "catkin" to CMAKE_PREFIX_PATH or set
+[0.264s]   "catkin_DIR" to a directory containing one of the above files.  If "catkin"
+[0.264s]   provides a separate development package or SDK, be sure it has been
+[0.264s]   installed.
+[0.264s] 
+[0.264s] [0m
+[0.264s] -- Configuring incomplete, errors occurred!
+[0.264s] See also "/home/nfl/Desktop/rosboard-main/build/rosboard/CMakeFiles/CMakeOutput.log".
+[0.266s] Invoked command in '/home/nfl/Desktop/rosboard-main/build/rosboard' returned '1': /usr/bin/cmake /home/nfl/Desktop/rosboard-main -DCATKIN_INSTALL_INTO_PREFIX_ROOT=0 -DCMAKE_INSTALL_PREFIX=/home/nfl/Desktop/rosboard-main/install/rosboard

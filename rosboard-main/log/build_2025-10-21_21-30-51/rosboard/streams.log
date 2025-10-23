@@ -1,0 +1,24 @@
+[0.718s] Invoking command in '/home/nopal/rosboard-main': PYTHONPATH=/home/nopal/rosboard-main/build/rosboard/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/nopal/rosboard-main/install/rosboard/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base build/rosboard build --build-base /home/nopal/rosboard-main/build/rosboard/build install --record /home/nopal/rosboard-main/build/rosboard/install.log --single-version-externally-managed install_data
+[0.852s] /home/nopal/.local/lib/python3.10/site-packages/setuptools/_distutils/dist.py:289: UserWarning: Unknown distribution option: 'tests_require'
+[0.852s]   warnings.warn(msg)
+[0.946s] running egg_info
+[0.961s] writing build/rosboard/rosboard.egg-info/PKG-INFO
+[0.962s] writing dependency_links to build/rosboard/rosboard.egg-info/dependency_links.txt
+[0.962s] writing entry points to build/rosboard/rosboard.egg-info/entry_points.txt
+[0.962s] writing requirements to build/rosboard/rosboard.egg-info/requires.txt
+[0.962s] writing top-level names to build/rosboard/rosboard.egg-info/top_level.txt
+[0.996s] reading manifest file 'build/rosboard/rosboard.egg-info/SOURCES.txt'
+[0.998s] adding license file 'LICENSE'
+[0.999s] writing manifest file 'build/rosboard/rosboard.egg-info/SOURCES.txt'
+[0.999s] running build
+[0.999s] running build_py
+[1.004s] running install
+[1.007s] running install_lib
+[1.025s] running install_data
+[1.025s] running install_egg_info
+[1.042s] removing '/home/nopal/rosboard-main/install/rosboard/lib/python3.10/site-packages/rosboard-1.3.1-py3.10.egg-info' (and everything under it)
+[1.043s] Copying build/rosboard/rosboard.egg-info to /home/nopal/rosboard-main/install/rosboard/lib/python3.10/site-packages/rosboard-1.3.1-py3.10.egg-info
+[1.043s] running install_scripts
+[1.173s] Installing rosboard_node script to /home/nopal/rosboard-main/install/rosboard/lib/rosboard
+[1.174s] writing list of installed files to '/home/nopal/rosboard-main/build/rosboard/install.log'
+[1.197s] Invoked command in '/home/nopal/rosboard-main' returned '0': PYTHONPATH=/home/nopal/rosboard-main/build/rosboard/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/nopal/rosboard-main/install/rosboard/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base build/rosboard build --build-base /home/nopal/rosboard-main/build/rosboard/build install --record /home/nopal/rosboard-main/build/rosboard/install.log --single-version-externally-managed install_data

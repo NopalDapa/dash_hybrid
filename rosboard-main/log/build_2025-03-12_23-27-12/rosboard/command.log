@@ -1,0 +1,2 @@
+Invoking command in '/home/nfl/Desktop/rosboard-main/build/rosboard': /usr/bin/cmake /home/nfl/Desktop/rosboard-main -DCATKIN_INSTALL_INTO_PREFIX_ROOT=0 -DCMAKE_INSTALL_PREFIX=/home/nfl/Desktop/rosboard-main/install/rosboard
+Invoked command in '/home/nfl/Desktop/rosboard-main/build/rosboard' returned '1': /usr/bin/cmake /home/nfl/Desktop/rosboard-main -DCATKIN_INSTALL_INTO_PREFIX_ROOT=0 -DCMAKE_INSTALL_PREFIX=/home/nfl/Desktop/rosboard-main/install/rosboard
