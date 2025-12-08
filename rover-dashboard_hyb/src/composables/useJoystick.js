@@ -1,84 +1,68 @@
 import { ref, onMounted, onUnmounted, watch, readonly } from 'vue';
-import ROSLIB from 'roslib';
-import { useROS } from './useRos'; 
+import { useROS } from './useRos';
+
+const JOYSTICK_TOPIC = '/web/joystick/input';
+const PUBLISH_INTERVAL_MS = 50;
 
 export function useJoystick() {
-  const { ros, isConnected } = useROS();
+  const { isConnected, publishFloat32MultiArray } = useROS();
   const gamepads = ref([]);
   let animationFrameId = null;
-  let joystickPublisher = null;
+  let lastPublish = 0;
 
-  const initJoystickPublisher = () => {
-    if (ros.value && isConnected.value && !joystickPublisher) {
-      joystickPublisher = new ROSLIB.Topic({
-        ros: ros.value,
-        name: '/web/joystick/input',
-        messageType: 'std_msgs/Float32MultiArray'
-      });
-      console.log('Joystick publisher initialized globally.');
-    } else if (!isConnected.value && joystickPublisher) {
-      // If disconnected, clear the publisher
-      joystickPublisher = null;
-      console.log('Joystick publisher cleared globally due to disconnection.');
-    }
+  const handleGamepadConnected = (event) => {
+    console.log('Gamepad connected:', event.gamepad);
+    gamepads.value = navigator.getGamepads().filter((gp) => gp !== null);
   };
 
-  watch(isConnected, (newVal) => {
-    if (newVal) {
-      initJoystickPublisher();
-    } else {
-      joystickPublisher = null; // Clear publisher on disconnect
+  const handleGamepadDisconnected = (event) => {
+    console.log('Gamepad disconnected:', event.gamepad);
+    gamepads.value = navigator.getGamepads().filter((gp) => gp !== null);
+  };
+
+  const pollGamepads = (timestamp) => {
+    const currentGamepads = navigator.getGamepads();
+    gamepads.value = Array.from(currentGamepads).filter((gp) => gp !== null);
+
+    if (
+      isConnected.value &&
+      gamepads.value.length > 0 &&
+      timestamp - lastPublish >= PUBLISH_INTERVAL_MS
+    ) {
+      const gamepad = gamepads.value[0];
+      const data = [];
+      gamepad.axes.forEach((axis) => data.push(axis));
+      gamepad.buttons.forEach((button) => data.push(button.pressed ? 1.0 : 0.0));
+      publishFloat32MultiArray(JOYSTICK_TOPIC, data);
+      lastPublish = timestamp;
     }
-  });
+
+    animationFrameId = window.requestAnimationFrame(pollGamepads);
+  };
 
   onMounted(() => {
     window.addEventListener('gamepadconnected', handleGamepadConnected);
     window.addEventListener('gamepaddisconnected', handleGamepadDisconnected);
-    initJoystickPublisher(); 
-    pollGamepads();
+    animationFrameId = window.requestAnimationFrame(pollGamepads);
   });
 
   onUnmounted(() => {
     window.removeEventListener('gamepadconnected', handleGamepadConnected);
     window.removeEventListener('gamepaddisconnected', handleGamepadDisconnected);
     if (animationFrameId) {
-      cancelAnimationFrame(animationFrameId);
+      window.cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
     }
-    joystickPublisher = null; 
   });
 
-  function handleGamepadConnected(event) {
-    console.log('Joystick connected globally:', event.gamepad);
-    gamepads.value = navigator.getGamepads().filter(gp => gp !== null);
-  }
-
-  function handleGamepadDisconnected(event) {
-    console.log('Joystick disconnected globally:', event.gamepad);
-    gamepads.value = navigator.getGamepads().filter(gp => gp !== null);
-  }
-
-  function pollGamepads() {
-    const currentGamepads = navigator.getGamepads();
-    gamepads.value = Array.from(currentGamepads).filter(gp => gp !== null);
-
-    if (isConnected.value && joystickPublisher && gamepads.value.length > 0) {
-      gamepads.value.forEach(gamepad => {
-        const data = [];
-        gamepad.axes.forEach(axis => data.push(axis));
-        gamepad.buttons.forEach(button => data.push(button.pressed ? 1.0 : 0.0));
-
-        const message = new ROSLIB.Message({
-          data: data
-        });
-        joystickPublisher.publish(message);
-      });
+  watch(isConnected, (connected) => {
+    if (!connected) {
+      lastPublish = 0;
     }
-
-    animationFrameId = requestAnimationFrame(pollGamepads);
-  }
+  });
 
   return {
     gamepads: readonly(gamepads),
-    isConnected: readonly(isConnected) 
+    isConnected: readonly(isConnected),
   };
 }

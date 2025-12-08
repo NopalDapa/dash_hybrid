@@ -1,48 +1,112 @@
-import { ref, readonly, computed, watch } from 'vue'; // Added ref and watch
-import ROSLIB from 'roslib';
+import { computed, readonly, ref, watch } from 'vue';
 import { useMainStore } from '../stores/store';
+import { useRosboardStore } from '../stores/rosboard';
 
-let monitorInterval = null;
 let watchersInitialized = false;
+let monitorInterval = null;
+let cachedInvoke = null;
 
-const initGlobalWatchers = (mainStore, subscribeToTopic, unsubscribeFromTopic, startMonitoring, stopMonitoring) => {
+const canUseTauri = () => typeof window !== 'undefined' && '__TAURI__' in window;
+
+let rclNodeSingleton = null;
+
+const ensureInvoke = async () => {
+  if (canUseTauri()) {
+    if (!cachedInvoke) {
+      const { invoke } = await import('@tauri-apps/api/tauri');
+      cachedInvoke = invoke;
+    }
+    return cachedInvoke;
+  }
+
+  if (rclNodeSingleton) {
+    return rclNodeSingleton;
+  }
+
+  const rclnodejs = await import('rclnodejs');
+  if (!rclnodejs.isInitialized()) {
+    await rclnodejs.init();
+  }
+  const node = rclnodejs.createNode('web_dashboard_bridge');
+  rclnodejs.spin(node);
+  rclNodeSingleton = { node, rclnodejs };
+  return rclNodeSingleton;
+};
+
+const deriveNodesFromTopics = (topicsMap) => {
+  const nodes = new Set();
+  for (const name of topicsMap.keys()) {
+    const tokens = String(name).split('/').filter(Boolean);
+    if (tokens.length > 0) {
+      nodes.add(tokens[0]);
+    }
+  }
+  return Array.from(nodes).sort();
+};
+
+const initGlobalWatchers = (mainStore, rosboardStore) => {
   if (watchersInitialized) {
     return;
   }
 
   watch(
-    () => mainStore.topics,
-    (newTopics, oldTopics) => {
-      if (!(newTopics instanceof Map)) {
-        return;
-      }
-      const previous = oldTopics instanceof Map ? oldTopics : new Map();
-
-      newTopics.forEach((type, name) => {
-        if (!previous.has(name)) {
-          subscribeToTopic(name, type);
-        }
-      });
-
-      previous.forEach((type, name) => {
-        if (!newTopics.has(name)) {
-          unsubscribeFromTopic(name);
-        }
-      });
-    },
-    { deep: true },
-  );
-
-  watch(
-    () => mainStore.status,
+    () => rosboardStore.status,
     (status) => {
-      if (status === 'Connected') {
-        startMonitoring();
-      } else if (status === 'Disconnected' || status === null) {
-        stopMonitoring();
+      switch (status) {
+        case 'connected':
+          mainStore.setStatus('Connected');
+          mainStore.setLoading(false);
+          mainStore.setMessage(`Connected to ROSboard${rosboardStore.url ? ` (${rosboardStore.url})` : ''}`);
+          break;
+        case 'connecting':
+          mainStore.setStatus(null);
+          mainStore.setLoading(true);
+          mainStore.setMessage('Connecting to ROSboard…');
+          break;
+        case 'error':
+          mainStore.setStatus('Disconnected');
+          mainStore.setLoading(false);
+          mainStore.setMessage(rosboardStore.lastError ?? 'ROSboard connection error.');
+          break;
+        default:
+          mainStore.setStatus('Disconnected');
+          if (!mainStore.loading) {
+            mainStore.setMessage('Disconnected from ROSboard.');
+          }
+          break;
       }
     },
     { immediate: true },
+  );
+
+  watch(
+    () => rosboardStore.topics,
+    (topicsObj) => {
+      const topicsMap = new Map(Object.entries(topicsObj ?? {}));
+      mainStore.setTopics(topicsMap);
+      mainStore.setNodes(deriveNodesFromTopics(topicsMap));
+
+      const validTopics = new Set(topicsMap.keys());
+      for (const existing of Array.from(mainStore.messages.keys())) {
+        if (!validTopics.has(existing)) {
+          mainStore.removeTopicMessage(existing);
+        }
+      }
+    },
+    { immediate: true, deep: true },
+  );
+
+  watch(
+    () => rosboardStore.latestMessages,
+    (messagesObj) => {
+      if (!messagesObj) {
+        return;
+      }
+      for (const [topicName, payload] of Object.entries(messagesObj)) {
+        mainStore.setTopicMessage(topicName, payload);
+      }
+    },
+    { immediate: true, deep: true },
   );
 
   watchersInitialized = true;
@@ -50,296 +114,191 @@ const initGlobalWatchers = (mainStore, subscribeToTopic, unsubscribeFromTopic, s
 
 export function useROS() {
   const mainStore = useMainStore();
-  const rosRef = ref(null); // Local ref for ROS instance
+  const rosboardStore = useRosboardStore();
 
-  // Watch for changes in mainStore.ros and update rosRef
-  watch(() => mainStore.ros, (newRos) => {
-    rosRef.value = newRos;
-  }, { immediate: true });
+  initGlobalWatchers(mainStore, rosboardStore);
 
-  function initializeROS(ip, port) {
-    const url = `ws://${ip}:${port}`;
-    console.log(`Attempting to connect to ROS at: ${url}`);
+  const rosPlaceholder = ref(null);
+  const isConnected = computed(() => rosboardStore.status === 'connected');
+
+  const initializeROS = (host, port) => {
+    const trimmedHost = host?.trim() ?? '';
+    const parsedPort = port ? Number(port) : undefined;
+
     mainStore.setLoading(true);
-    mainStore.setServer(ip);
-    mainStore.setStatus(null); // Reset status on new connection attempt
+    mainStore.setServer(trimmedHost);
+    mainStore.setStatus(null);
+    mainStore.setMessage(`Connecting to ROSboard server at ${trimmedHost}${parsedPort ? `:${parsedPort}` : ''}…`);
 
-    const rosConnection = new ROSLIB.Ros({ url });
-
-    mainStore.setRos(rosConnection);
-    console.log('ROS instance set in store:', mainStore.ros);
-
-    rosConnection.on('connection', () => {
-      mainStore.setMessage(`Connected to ROS master: ${url}`);
-      mainStore.setLoading(false);
-      mainStore.setStatus('Connected');
-      console.log('ROS connection successful. isConnected:', mainStore.isConnected);
-      initializeRosTopics(rosConnection);
-    });
-
-    rosConnection.on('error', (error) => {
-      mainStore.setMessage(`Error connecting to ROS: ${url} - ${error.message || error}`);
-      mainStore.setLoading(false);
-      mainStore.setStatus('Disconnected');
-      console.error('ROS connection error:', error);
-      console.log('ROS connection failed. isConnected:', mainStore.isConnected);
-    });
-
-    rosConnection.on('close', () => {
-      console.log('ROS connection closed');
-      mainStore.setMessage(`Closed connection to ROS master: ${url}`);
-      mainStore.setLoading(false);
-      mainStore.clearAllRosData();
-      console.log('ROS connection closed. isConnected:', mainStore.isConnected);
-    });
-  }
-
-  function initializeRosTopics(rosInstance) {
-    if (!rosInstance) {
-      console.warn("ROS instance not provided for topic initialization.");
-      return;
-    }
-
-    // Publishers
-    const topicConfiguration = new ROSLIB.Topic({
-      ros: rosInstance,
-      name: '/web/config/configuration',
-      messageType: 'std_msgs/Float32MultiArray'
-    });
-    mainStore.setTopicConfiguration(topicConfiguration);
-
-    const topicVelocityAndSteering = new ROSLIB.Topic({
-      ros: rosInstance,
-      name: '/master/ui_target_velocity_and_steering',
-      messageType: 'std_msgs/Float32MultiArray'
-    });
-    mainStore.setTopicVelocityAndSteering(topicVelocityAndSteering);
-
-
-    // Subscribers
-    const configListener = new ROSLIB.Topic({
-      ros: rosInstance,
-      name: '/web/config/configuration_init',
-      messageType: 'std_msgs/Float32MultiArray'
-    });
-    mainStore.setConfigListener(configListener);
-
-    const robotVelSubscriber = new ROSLIB.Topic({
-      ros: rosInstance,
-      name: '/motor_main/velocity_feedback',
-      messageType: 'std_msgs/Float32'
-    });
-    mainStore.setRobotVelSubscriber(robotVelSubscriber);
-
-    const robotVelInfoSubscriber = new ROSLIB.Topic({
-      ros: rosInstance,
-      name: '/master/target_speed',
-      messageType: 'std_msgs/Float32'
-    });
-    mainStore.setRobotVelInfoSubscriber(robotVelInfoSubscriber);
-
-    const robotSteeringSubscriber = new ROSLIB.Topic({
-      ros: rosInstance,
-      name: '/master/target_steering',
-      messageType: 'std_msgs/Float32'
-    });
-    mainStore.setRobotSteeringSubscriber(robotSteeringSubscriber);
-
-    // Request initial config
-    const reqConfig = new ROSLIB.Topic({
-      ros: rosInstance,
-      name: '/web/config/request_config',
-      messageType: 'std_msgs/Int16'
-    });
-    reqConfig.publish({});
-  }
-
-  // Helper to compare two Maps so we only update if topics truly changed.
-  const areMapsEqual = (a, b) => {
-    if (a.size !== b.size) return false;
-    for (const [key, val] of a.entries()) {
-      if (!b.has(key) || b.get(key) !== val) return false;
-    }
-    return true;
+    rosboardStore.configure({ host: trimmedHost, port: parsedPort });
+    rosboardStore.setDisconnectWhenIdle(false);
+    rosboardStore.connect();
   };
 
-  function updateTopics() {
-    if (mainStore.ros && mainStore.isConnected) {
-      mainStore.ros.getTopics((result) => {
-        const newMap = new Map();
-        for (let i = 0; i < result.topics.length; i++) {
-          const topicName = result.topics[i];
-          // Ignore /rosout if desired
-          if (topicName === '/rosout') continue;
-          newMap.set(topicName, result.types[i]);
-        }
-
-        if (!areMapsEqual(mainStore.topics, newMap)) {
-          mainStore.setTopics(newMap);
-          mainStore.setMessage(`Found ${mainStore.topics.size} topics.`);
-        }
-      }, (error) => {
-        mainStore.setMessage(`Error listing topics: ${error.message || error}`);
-        console.error('Error listing topics:', error);
-      });
-    } else {
-      mainStore.setMessage('ROS not connected. Cannot list topics.');
-    }
-  }
-
-  function updateNodes() {
-    if (mainStore.ros && mainStore.isConnected) {
-      mainStore.ros.getNodes((result) => {
-        if (JSON.stringify(mainStore.nodes) !== JSON.stringify(result)) {
-          mainStore.setNodes(result);
-          mainStore.setMessage(`Found ${mainStore.nodes.length} nodes.`);
-        }
-      }, (error) => {
-        mainStore.setMessage(`Error listing nodes: ${error.message || error}`);
-        console.error('Error listing nodes:', error);
-      });
-    } else {
-      mainStore.setMessage('ROS not connected. Cannot list nodes.');
-    }
-  }
-
-  const isCameraImageTopic = (topicName, topicType) => {
-    const type = (topicType || '').toLowerCase();
-    if (
-      type.includes('sensor_msgs/msg/image') ||
-      type.includes('sensor_msgs/image') ||
-      type.includes('sensor_msgs/msg/compressedimage') ||
-      type.includes('sensor_msgs/compressedimage') ||
-      type.includes('theora_image_transport/msg/packet')
-    ) {
-      return true;
-    }
-
-    const name = (topicName || '').toLowerCase();
-    return name.includes('/camera') && name.includes('image');
+  const updateTopics = () => {
+    const topicsMap = new Map(Object.entries(rosboardStore.topics ?? {}));
+    mainStore.setTopics(topicsMap);
+    mainStore.setNodes(deriveNodesFromTopics(topicsMap));
   };
 
-  function subscribeToTopic(topicName, topicType) {
-    if (!mainStore.ros || !mainStore.isConnected) {
-      mainStore.setMessage('ROS not connected. Cannot subscribe.');
+  const updateNodes = () => {
+    mainStore.setNodes(deriveNodesFromTopics(mainStore.topics));
+  };
+
+  const subscribeToTopic = (topicName, _topicType, options = {}) => {
+    const trimmedName = topicName?.trim();
+    if (!trimmedName) {
       return;
     }
-    if (mainStore.subscriptions.has(topicName)) {
-      // Already subscribed
+    rosboardStore.subscribe(trimmedName, options);
+  };
+
+  const unsubscribeFromTopic = (topicName) => {
+    const trimmedName = topicName?.trim();
+    if (!trimmedName) {
       return;
     }
-
-    if (isCameraImageTopic(topicName, topicType)) {
-      mainStore.setMessage(`Skipping camera topic on rosbridge: ${topicName}`);
-      return;
-    }
-
-    const subscriber = new ROSLIB.Topic({
-      ros: mainStore.ros,
-      name: topicName,
-      messageType: topicType,
-      throttle_rate: 100,
-    });
-
-    subscriber.subscribe((msg) => {
-      mainStore.setMessages(topicName, msg);
-    });
-
-    mainStore.addSubscription(topicName, subscriber);
-    mainStore.setMessage(`Subscribed to topic: ${topicName}`);
-  }
-
-  function unsubscribeFromTopic(topicName) {
-    mainStore.removeSubscription(topicName);
-    mainStore.setMessage(`Unsubscribed from topic: ${topicName}`);
-  }
-
-  function setRosParameter(nodeName, paramName, paramValue) {
-    if (!mainStore.ros || !mainStore.isConnected) {
-      console.error("ROS not connected. Cannot set parameter.");
-      return;
-    }
-
-    // ROS 2 parameters are typically accessed directly via ROSLIB.Param
-    // rosbridge_websocket expects parameter names in the format "node_name;param_name"
-    const rosParamName = `${nodeName}:${paramName}`;
-    const rosParam = new ROSLIB.Param({
-      ros: mainStore.ros,
-      name: rosParamName
-    });
-
-    rosParam.set(paramValue, function() {
-      console.log(`Parameter ${rosParamName} set to ${paramValue}.`);
-    mainStore.setMessage(`Parameter ${rosParamName} set to ${paramValue}`);
-  }, function(error) {
-      console.error(`Error setting parameter ${rosParamName}:`, error);
-      mainStore.setMessage(`Error setting parameter ${rosParamName}: ${error.message || error}`);
-    });
-  }
-
-  function ensureTestTopicPublisher() {
-    if (!mainStore.testTopicPublisher) {
-      if (!mainStore.ros) {
-        console.warn('ROS instance not ready.');
-        return null;
-      }
-      const testTopic = new ROSLIB.Topic({
-        ros: mainStore.ros,
-        name: '/test',
-        messageType: 'std_msgs/msg/Int32'
-      });
-      mainStore.setTestTopicPublisher(testTopic);
-    }
-    return mainStore.testTopicPublisher;
-  }
-
-  function publishTestValue(nextValue) {
-    if (!mainStore.ros || !mainStore.isConnected) {
-      console.warn('ROS not connected. Cannot publish test value.');
-      mainStore.setMessage('ROS not connected. Cannot publish test value.');
-      return;
-    }
-
-    const numericValue = Number(nextValue);
-    if (!Number.isFinite(numericValue)) {
-      console.warn('Invalid value provided for test topic publish:', nextValue);
-      return;
-    }
-
-    const publisher = ensureTestTopicPublisher();
-    if (!publisher) {
-      console.warn('Failed to initialize test topic publisher.');
-      return;
-    }
-
-    const intValue = Math.trunc(numericValue);
-    publisher.publish({ data: intValue });
-    mainStore.setMessage(`Published /test value: ${intValue}`);
-  }
+    rosboardStore.unsubscribe(trimmedName);
+    mainStore.removeTopicMessage(trimmedName);
+  };
 
   const startMonitoring = () => {
-    if (monitorInterval) {
+    if (typeof window === 'undefined' || monitorInterval) {
       return;
     }
-    monitorInterval = setInterval(() => {
-      if (mainStore.status === 'Connected') {
+    monitorInterval = window.setInterval(() => {
+      if (rosboardStore.status === 'connected') {
         updateTopics();
-        updateNodes();
       }
-    }, 1000);
+    }, 2000);
   };
 
   const stopMonitoring = () => {
-    if (monitorInterval) {
-      clearInterval(monitorInterval);
-      monitorInterval = null;
+    if (typeof window === 'undefined' || !monitorInterval) {
+      return;
+    }
+    window.clearInterval(monitorInterval);
+    monitorInterval = null;
+  };
+
+  const setRosParameter = async (nodeName, paramName, paramValue) => {
+    if (!nodeName || !paramName) {
+      console.warn('Parameter name or node name missing.');
+      return;
+    }
+    try {
+      await callTauri('set_ros_parameter', {
+        nodeName,
+        paramName,
+        value: paramValue,
+      });
+      mainStore.setMessage(`Parameter ${nodeName}.${paramName} updated.`);
+    } catch (error) {
+      console.error('Failed to set ROS parameter', error);
+      mainStore.setMessage(`Failed to set parameter ${nodeName}.${paramName}.`);
     }
   };
 
-  initGlobalWatchers(mainStore, subscribeToTopic, unsubscribeFromTopic, startMonitoring, stopMonitoring);
+  const publishFloat32MultiArray = async (topicName, data) => {
+    if (!topicName) {
+      console.warn('Topic name required for publish.');
+      return;
+    }
+    try {
+      if (canUseTauri()) {
+        const invoke = await ensureInvoke();
+        await invoke('publish_float32_multi_array', { topicName, data });
+      } else {
+        const bridge = await ensureInvoke();
+        if (!bridge) {
+          throw new Error('ROS bridge unavailable');
+        }
+        const { node, rclnodejs } = bridge;
+        const publisherKey = `pub:${topicName}`;
+        if (!node[publisherKey]) {
+          node[publisherKey] = node.createPublisher('std_msgs/msg/Float32MultiArray', topicName);
+        }
+        const message = rclnodejs.createMessage('std_msgs/msg/Float32MultiArray', { data });
+        node[publisherKey].publish(message);
+      }
+      mainStore.setMessage(`Published ${topicName}`);
+    } catch (error) {
+      console.error(`Failed to publish ${topicName}`, error);
+      mainStore.setMessage(`Failed to publish to ${topicName}.`);
+    }
+  };
+
+  const publishTestValue = async (value) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+      mainStore.setMessage('Invalid value for /test topic.');
+      return;
+    }
+    try {
+      if (canUseTauri()) {
+        const invoke = await ensureInvoke();
+        await invoke('publish_int32', {
+          topicName: '/test',
+          value: Math.trunc(numericValue),
+        });
+      } else {
+        const bridge = await ensureInvoke();
+        if (!bridge) {
+          throw new Error('ROS bridge unavailable');
+        }
+        const { node, rclnodejs } = bridge;
+        const publisherKey = `pub:/test`;
+        if (!node[publisherKey]) {
+          node[publisherKey] = node.createPublisher('std_msgs/msg/Int32', '/test');
+        }
+        const message = rclnodejs.createMessage('std_msgs/msg/Int32', {
+          data: Math.trunc(numericValue),
+        });
+        node[publisherKey].publish(message);
+      }
+      mainStore.setMessage(`Published /test value: ${Math.trunc(numericValue)}`);
+    } catch (error) {
+      console.error('Failed to publish /test value', error);
+      mainStore.setMessage('Failed to publish /test value.');
+    }
+  };
+
+  const publishInt16 = async (topicName, value) => {
+    const intValue = Number(value);
+    if (!Number.isFinite(intValue)) {
+      mainStore.setMessage(`Invalid value for ${topicName}.`);
+      return;
+    }
+    try {
+      if (canUseTauri()) {
+        const invoke = await ensureInvoke();
+        await invoke('publish_int16', {
+          topicName,
+          value: Math.trunc(intValue),
+        });
+      } else {
+        const bridge = await ensureInvoke();
+        if (!bridge) {
+          throw new Error('ROS bridge unavailable');
+        }
+        const { node, rclnodejs } = bridge;
+        const publisherKey = `pub:${topicName}`;
+        if (!node[publisherKey]) {
+          node[publisherKey] = node.createPublisher('std_msgs/msg/Int16', topicName);
+        }
+        const message = rclnodejs.createMessage('std_msgs/msg/Int16', {
+          data: Math.trunc(intValue),
+        });
+        node[publisherKey].publish(message);
+      }
+    } catch (error) {
+      console.error(`Failed to publish ${topicName}`, error);
+      mainStore.setMessage(`Failed to publish to ${topicName}.`);
+    }
+  };
 
   return {
-    ros: readonly(rosRef), // Return the local reactive ref
+    ros: readonly(rosPlaceholder),
     loading: readonly(mainStore.loading),
     server: readonly(mainStore.server),
     status: readonly(mainStore.status),
@@ -347,15 +306,16 @@ export function useROS() {
     topics: readonly(mainStore.topics),
     nodes: readonly(mainStore.nodes),
     messages: readonly(mainStore.messages),
-    isConnected: computed(() => mainStore.isConnected),
+    isConnected,
     initializeROS,
     updateTopics,
     updateNodes,
     subscribeToTopic,
     unsubscribeFromTopic,
-    setRosParameter, // Expose this function
-    initializeRosTopics, // Expose this function
+    setRosParameter,
+    publishFloat32MultiArray,
     publishTestValue,
+    publishInt16,
     startMonitoring,
     stopMonitoring,
   };

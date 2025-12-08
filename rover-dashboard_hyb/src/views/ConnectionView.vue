@@ -5,33 +5,6 @@
 
       <form @submit.prevent="connectRos">
         <div class="mb-4">
-          <label for="ip" class="block text-gray-700 text-sm font-bold mb-2">
-            ROS Master IP:
-          </label>
-          <input
-            type="text"
-            id="ip"
-            v-model="ip"
-            @input="handleIpChange"
-            required
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-        <div class="mb-6">
-          <label for="port" class="block text-gray-700 text-sm font-bold mb-2">
-            Port:
-          </label>
-          <input
-            type="text"
-            id="port"
-            v-model="port"
-            @input="handlePortChange"
-            placeholder="Enter ROS Master Server Port"
-            required
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-        <div class="mb-4">
           <label for="rosboard-host" class="block text-gray-700 text-sm font-bold mb-2">
             ROSboard Host:
           </label>
@@ -40,11 +13,12 @@
             id="rosboard-host"
             v-model="rosboardHost"
             @input="handleRosboardHostChange"
-            placeholder="Kosongkan untuk mengikuti ROS Master IP"
+            placeholder="Contoh: 192.168.1.10"
+            required
             class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
           <p class="text-xs text-gray-500 mt-1">
-            Biarkan kosong jika ROSboard berjalan di host yang sama dengan ROS Master.
+            Isi hostname atau IP mesin yang menjalankan ROSboard websocket.
           </p>
         </div>
         <div class="mb-6">
@@ -88,9 +62,7 @@ import { useMainStore } from '../stores/store';
 import { useROS } from '../composables/useRos';
 import { useRosboardStore } from '../stores/rosboard.js';
 
-const ip = ref<string>('');
 const router = useRouter();
-const port = ref<string>('9090');
 const rosboardHost = ref<string>('');
 const rosboardPort = ref<string>('8888');
 const rosboardHostTouched = ref<boolean>(false);
@@ -100,12 +72,10 @@ const { initializeROS, isConnected } = useROS();
 const rosboardStore = useRosboardStore();
 
 onMounted(() => {
-  const storedIp = localStorage.getItem('ip');
-  const storedPort = localStorage.getItem('port');
+  const storedIp = localStorage.getItem('ip'); // legacy key
+  const storedPort = localStorage.getItem('port'); // legacy key
   const storedRosboardHost = localStorage.getItem('rosboardHost');
   const storedRosboardPort = localStorage.getItem('rosboardPort');
-  if (storedIp) ip.value = storedIp;
-  if (storedPort) port.value = storedPort;
   if (storedRosboardHost) {
     rosboardHost.value = storedRosboardHost;
     rosboardHostTouched.value = storedRosboardHost.length > 0;
@@ -114,16 +84,10 @@ onMounted(() => {
   }
   if (storedRosboardPort) {
     rosboardPort.value = storedRosboardPort;
+  } else if (storedPort) {
+    rosboardPort.value = storedPort;
   }
 });
-
-const handleIpChange = (e: Event) => {
-  ip.value = (e.target as HTMLInputElement).value;
-};
-
-const handlePortChange = (e: Event) => {
-  port.value = (e.target as HTMLInputElement).value;
-};
 
 const handleRosboardHostChange = (e: Event) => {
   rosboardHostTouched.value = true;
@@ -136,34 +100,21 @@ const handleRosboardPortChange = (e: Event) => {
 
 
 const connectRos = () => {
-  // Only close if connected
-  if (mainStore.ros && mainStore.status === 'Connected') {
-    mainStore.ros.close();
-    console.log('ROS connection closed');
-  }
-
-  localStorage.setItem('ip', ip.value);
-  localStorage.setItem('port', port.value);
-  const resolvedRosboardHost = (rosboardHost.value || ip.value).trim();
+  const resolvedRosboardHost = rosboardHost.value.trim();
   const resolvedRosboardPort = rosboardPort.value.trim() || '8888';
-  localStorage.setItem('rosboardHost', resolvedRosboardHost);
+  if (resolvedRosboardHost) {
+    localStorage.setItem('rosboardHost', resolvedRosboardHost);
+  }
   localStorage.setItem('rosboardPort', resolvedRosboardPort);
 
   rosboardStore.configure({
     host: resolvedRosboardHost,
     port: resolvedRosboardPort,
   });
-  rosboardStore.setDisconnectWhenIdle(true);
-  rosboardStore.disconnectIfIdle();
+  rosboardStore.disconnect(false);
 
-  initializeROS(ip.value, port.value);
+  initializeROS(resolvedRosboardHost, resolvedRosboardPort);
 };
-
-watch(ip, (newValue, oldValue) => {
-  if (!rosboardHostTouched.value || rosboardHost.value === oldValue) {
-    rosboardHost.value = newValue;
-  }
-});
 
 watch(isConnected, (newStatus) => {
   if (newStatus) { // isConnected is a boolean, so true means connected

@@ -1,0 +1,35 @@
+[0.000000] (-) TimerEvent: {}
+[0.000136] (rosboard) JobQueued: {'identifier': 'rosboard', 'dependencies': OrderedDict()}
+[0.000168] (rosboard) JobStarted: {'identifier': 'rosboard'}
+[0.099465] (-) TimerEvent: {}
+[0.199708] (-) TimerEvent: {}
+[0.300056] (-) TimerEvent: {}
+[0.400408] (-) TimerEvent: {}
+[0.500784] (-) TimerEvent: {}
+[0.601040] (-) TimerEvent: {}
+[0.629701] (rosboard) Command: {'cmd': ['/usr/bin/python3', '-W', 'ignore:setup.py install is deprecated', '-W', 'ignore:easy_install command is deprecated', 'setup.py', 'egg_info', '--egg-base', 'build/rosboard', 'build', '--build-base', '/home/nopal/dash_hybrid (1)/rosboard-main/build/rosboard/build', 'install', '--record', '/home/nopal/dash_hybrid (1)/rosboard-main/build/rosboard/install.log', '--single-version-externally-managed', 'install_data'], 'cwd': '/home/nopal/dash_hybrid (1)/rosboard-main', 'env': {'GJS_DEBUG_TOPICS': 'JS ERROR;JS LOG', 'USER': 'nopal', 'LC_TIME': 'id_ID.UTF-8', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/opt/libphidget22/lib:/opt/ros/humble/lib', 'HOME': '/home/nopal', 'OLDPWD': '/home/nopal/dash_hybrid (1)', 'DESKTOP_SESSION': 'ubuntu-xorg', 'GIO_LAUNCHED_DESKTOP_FILE': '/usr/share/applications/terminator.desktop', 'ZSH': '/home/nopal/.oh-my-zsh', 'GTK_MODULES': 'gail:atk-bridge', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'MANAGERPID': '2791', 'LC_MONETARY': 'id_ID.UTF-8', 'SYSTEMD_EXEC_PID': '3019', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'GIO_LAUNCHED_DESKTOP_FILE_PID': '11266', 'LIBVIRT_DEFAULT_URI': 'qemu:///system', 'TERMINATOR_DBUS_NAME': 'net.tenshu.Terminator21a9d5db22c73a993ff0b42f64b396873', 'COLORTERM': 'truecolor', 'ROS_DISTRO': 'humble', 'GTK_IM_MODULE': 'ibus', 'LOGNAME': 'nopal', 'JOURNAL_STREAM': '8:29823', 'IGN_GAZEBO_MODEL_PATH': '/opt/ros/humble/share', '_': '/usr/bin/colcon', 'XDG_SESSION_CLASS': 'user', 'ROS_VERSION': '2', 'TERM': 'xterm-256color', 'USERNAME': 'nopal', 'GAZEBO_MODEL_PATH': '/opt/ros/humble/share', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'ROS_LOCALHOST_ONLY': '0', 'WINDOWPATH': '2', 'PATH': '/opt/ros/humble/bin:/home/nopal/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/usr/local/go/bin:/home/nopal/go/bin', 'SESSION_MANAGER': 'local/Nopal:@/tmp/.ICE-unix/2991,unix/Nopal:/tmp/.ICE-unix/2991', 'INVOCATION_ID': 'f8d6bc4c40bf417686773596dff83604', 'XDG_MENU_PREFIX': 'gnome-', 'XDG_RUNTIME_DIR': '/run/user/1000', 'LC_ADDRESS': 'id_ID.UTF-8', 'DISPLAY': ':0', 'LANG': 'en_US.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'IBUS_DISABLE_SNOOPER': '1', 'LC_TELEPHONE': 'id_ID.UTF-8', 'TERMINATOR_DBUS_PATH': '/net/tenshu/Terminator2', 'XDG_SESSION_DESKTOP': 'ubuntu-xorg', 'XMODIFIERS': '@im=ibus', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'SSH_AGENT_LAUNCHER': 'gnome-keyring', 'AMENT_PREFIX_PATH': '/opt/ros/humble', 'SHELL': '/usr/bin/zsh', 'TERMINATOR_UUID': 'urn:uuid:55ff3543-dc9c-49c0-8c7f-9bd902be2961', 'LC_NAME': 'id_ID.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu-xorg', 'IGN_GAZEBO_RESOURCE_PATH': '/opt/ros/humble/share', 'LC_MEASUREMENT': 'id_ID.UTF-8', 'LC_IDENTIFICATION': 'id_ID.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'GJS_DEBUG_OUTPUT': 'stderr', 'GAZEBO_RESOURCE_PATH': '/opt/ros/humble/share', 'QT_IM_MODULE': 'ibus', 'LC_ALL': 'en_US.UTF-8', 'PWD': '/home/nopal/dash_hybrid (1)/rosboard-main/build/rosboard', 'ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE': 'fg=cyan,bold', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu-xorg:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'LC_NUMERIC': 'id_ID.UTF-8', 'PYTHONPATH': '/home/nopal/dash_hybrid (1)/rosboard-main/build/rosboard/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/nopal/dash_hybrid (1)/rosboard-main/install/rosboard/lib/python3.10/site-packages:/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages', 'LC_PAPER': 'id_ID.UTF-8', 'COLCON': '1', 'VTE_VERSION': '6800'}, 'shell': False}
+[0.701203] (-) TimerEvent: {}
+[0.801497] (-) TimerEvent: {}
+[0.819947] (rosboard) StdoutLine: {'line': b'running egg_info\n'}
+[0.820316] (rosboard) StdoutLine: {'line': b'writing build/rosboard/rosboard.egg-info/PKG-INFO\n'}
+[0.822518] (rosboard) StdoutLine: {'line': b'writing dependency_links to build/rosboard/rosboard.egg-info/dependency_links.txt\n'}
+[0.822601] (rosboard) StdoutLine: {'line': b'writing entry points to build/rosboard/rosboard.egg-info/entry_points.txt\n'}
+[0.822750] (rosboard) StdoutLine: {'line': b'writing requirements to build/rosboard/rosboard.egg-info/requires.txt\n'}
+[0.822824] (rosboard) StdoutLine: {'line': b'writing top-level names to build/rosboard/rosboard.egg-info/top_level.txt\n'}
+[0.825077] (rosboard) StdoutLine: {'line': b"reading manifest file 'build/rosboard/rosboard.egg-info/SOURCES.txt'\n"}
+[0.825271] (rosboard) StdoutLine: {'line': b"adding license file 'LICENSE'\n"}
+[0.826324] (rosboard) StdoutLine: {'line': b"writing manifest file 'build/rosboard/rosboard.egg-info/SOURCES.txt'\n"}
+[0.826408] (rosboard) StdoutLine: {'line': b'running build\n'}
+[0.826445] (rosboard) StdoutLine: {'line': b'running build_py\n'}
+[0.829913] (rosboard) StdoutLine: {'line': b'running install\n'}
+[0.830032] (rosboard) StdoutLine: {'line': b'running install_lib\n'}
+[0.832201] (rosboard) StdoutLine: {'line': b'running install_data\n'}
+[0.832274] (rosboard) StdoutLine: {'line': b'running install_egg_info\n'}
+[0.833502] (rosboard) StdoutLine: {'line': b"removing '/home/nopal/dash_hybrid (1)/rosboard-main/install/rosboard/lib/python3.10/site-packages/rosboard-1.3.1-py3.10.egg-info' (and everything under it)\n"}
+[0.834052] (rosboard) StdoutLine: {'line': b'Copying build/rosboard/rosboard.egg-info to /home/nopal/dash_hybrid (1)/rosboard-main/install/rosboard/lib/python3.10/site-packages/rosboard-1.3.1-py3.10.egg-info\n'}
+[0.834596] (rosboard) StdoutLine: {'line': b'running install_scripts\n'}
+[0.848316] (rosboard) StdoutLine: {'line': b'Installing rosboard_node script to /home/nopal/dash_hybrid (1)/rosboard-main/install/rosboard/lib/rosboard\n'}
+[0.848927] (rosboard) StdoutLine: {'line': b"writing list of installed files to '/home/nopal/dash_hybrid (1)/rosboard-main/build/rosboard/install.log'\n"}
+[0.864556] (rosboard) CommandEnded: {'returncode': 0}
+[0.873282] (rosboard) JobEnded: {'identifier': 'rosboard', 'rc': 0}
+[0.873744] (-) EventReactorShutdown: {}

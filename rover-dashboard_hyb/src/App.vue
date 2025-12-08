@@ -52,35 +52,30 @@
 </template>
 
 <script setup>
-import { onMounted, watch } from 'vue';
+import { onMounted } from 'vue';
 import { useROS } from './composables/useRos';
 import { useMainStore } from './stores/store';
+import { useRosboardStore } from './stores/rosboard';
 import { useRouter } from 'vue-router';
 import { useJoystick } from './composables/useJoystick'; // Import the new composable
 
-const { isConnected, initializeROS, initializeRosTopics } = useROS();
+const { isConnected, initializeROS } = useROS();
 const mainStore = useMainStore();
+const rosboardStore = useRosboardStore();
 const router = useRouter();
 useJoystick(); // Initialize the joystick composable globally
 
 onMounted(() => {
-  const storedIp = localStorage.getItem('ip');
-  const storedPort = localStorage.getItem('port');
-  if (storedIp && storedPort && !mainStore.ros) {
-    initializeROS(storedIp, storedPort);
-  }
-});
-
-watch(() => mainStore.ros, (newRosInstance) => {
-  if (newRosInstance && mainStore.isConnected) {
-    initializeRosTopics(newRosInstance);
+  const storedHost = localStorage.getItem('rosboardHost');
+  const storedPort = localStorage.getItem('rosboardPort');
+  if (storedHost && storedPort && !isConnected.value) {
+    initializeROS(storedHost, storedPort);
   }
 });
 
 const disconnectRos = () => {
-  if (mainStore.ros) {
-    mainStore.ros.close();
-    router.push('/connect'); 
-  }
+  rosboardStore.disconnect(false);
+  mainStore.clearAllData();
+  router.push('/connect');
 };
 </script>

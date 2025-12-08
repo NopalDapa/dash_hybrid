@@ -45,200 +45,206 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useMainStore } from '../stores/store';
 import { useROS } from '../composables/useRos';
 
+const CONFIG_FEEDBACK_TOPIC = '/web/config/configuration_init';
+const CONFIG_COMMAND_TOPIC = '/web/config/configuration';
+const CONFIG_REQUEST_TOPIC = '/web/config/request_config';
+const VELOCITY_COMMAND_TOPIC = '/master/ui_target_velocity_and_steering';
+const ROBOT_SPEED_TOPIC = '/master/target_speed';
+const ROBOT_STEERING_TOPIC = '/master/target_steering';
+const TEST_TOPIC = '/test';
+
 const mainStore = useMainStore();
-const { isConnected, publishTestValue, subscribeToTopic, unsubscribeFromTopic } = useROS(); 
+const {
+  isConnected,
+  subscribeToTopic,
+  unsubscribeFromTopic,
+  publishFloat32MultiArray,
+  publishTestValue,
+  publishInt16,
+} = useROS();
 
 const robotVelocity = ref(0.0);
 const robotSteering = ref(0.0);
+
 const configurationNames = [
-  // nama params
-  "k_p_wheel",
-  "k_i_wheel", 
-  "k_d_wheel", 
-  "k_d_steering", 
-  "wheel_radius",
-  "encoder_ppr", 
-  "cnt_to_meter", 
-  "max_steering_deg", 
-  "min_steering_deg",
-  "max_steering_pwm",
-   "min_steering_pwm", 
-   "mid_steering_pwm",
-  "max_wheel_velocity_pwm", 
-  "min_wheel_velocity_pwm", 
-  "max_wheel_integral_pwm",
-  "min_wheel_integral_pwm", 
-  "wheel_base", 
-  "tuning", 
-  "K_model",
-  "test"
+  'k_p_wheel',
+  'k_i_wheel',
+  'k_d_wheel',
+  'k_d_steering',
+  'wheel_radius',
+  'encoder_ppr',
+  'cnt_to_meter',
+  'max_steering_deg',
+  'min_steering_deg',
+  'max_steering_pwm',
+  'min_steering_pwm',
+  'mid_steering_pwm',
+  'max_wheel_velocity_pwm',
+  'min_wheel_velocity_pwm',
+  'max_wheel_integral_pwm',
+  'min_wheel_integral_pwm',
+  'wheel_base',
+  'tuning',
+  'K_model',
+  'test',
 ];
 
 const configurations = ref(Array(configurationNames.length).fill(0));
-const canPublishTestValue = computed(() => mainStore.status === 'Connected');
-const testTopicName = '/test';
-const testTopicType = 'std_msgs/msg/Int32';
 const testTopicIndex = configurationNames.indexOf('test');
 let lastPublishedTestValue = null;
 
-const currentTestMessage = computed(() => {
-  const message = mainStore.messages.get(testTopicName);
-  if (!message) return null;
-  if (typeof message === 'number') return message;
-  if (typeof message.data === 'number') return message.data;
-  if (message.data && typeof message.data.data === 'number') return message.data.data;
-  return null;
-});
+const configurationMessage = computed(() => mainStore.messages.get(CONFIG_FEEDBACK_TOPIC));
+const robotVelocityMessage = computed(() => mainStore.messages.get(ROBOT_SPEED_TOPIC));
+const robotSteeringMessage = computed(() => mainStore.messages.get(ROBOT_STEERING_TOPIC));
+const testMessage = computed(() => mainStore.messages.get(TEST_TOPIC));
 
-watch(currentTestMessage, (val) => {
-  if (typeof val === 'number' && testTopicIndex !== -1) {
-    lastPublishedTestValue = val;
-    if (configurations.value[testTopicIndex] !== val) {
-      configurations.value[testTopicIndex] = val;
+watch(configurationMessage, (msg) => {
+  if (!msg || !Array.isArray(msg.data)) {
+    return;
+  }
+  const received = msg.data.slice(0, configurationNames.length);
+  while (received.length < configurationNames.length) {
+    received.push(0);
+  }
+  configurations.value = received;
+
+  if (testTopicIndex !== -1) {
+    const incomingTestValue = received[testTopicIndex];
+    if (Number.isFinite(incomingTestValue)) {
+      lastPublishedTestValue = incomingTestValue;
     }
   }
 }, { immediate: true });
 
+watch(robotVelocityMessage, (msg) => {
+  const value = msg?.data;
+  if (typeof value === 'number') {
+    robotVelocity.value = value;
+  }
+}, { immediate: true });
+
+watch(robotSteeringMessage, (msg) => {
+  const value = msg?.data;
+  if (typeof value === 'number') {
+    robotSteering.value = value;
+  }
+}, { immediate: true });
+
+watch(testMessage, (msg) => {
+  const value = typeof msg?.data === 'number' ? msg.data : undefined;
+  if (typeof value === 'number' && testTopicIndex !== -1) {
+    if (configurations.value[testTopicIndex] !== value) {
+      configurations.value[testTopicIndex] = value;
+    }
+    lastPublishedTestValue = value;
+  }
+}, { immediate: true });
+
 if (testTopicIndex !== -1) {
-  watch(() => configurations.value[testTopicIndex], (val) => {
-    if (!Number.isFinite(val)) {
-      return;
-    }
-    if (!canPublishTestValue.value) {
-      return;
-    }
-    if (val === lastPublishedTestValue) {
-      return;
-    }
-    publishTestValue(val);
-    lastPublishedTestValue = val;
-  });
+  watch(
+    () => configurations.value[testTopicIndex],
+    (val) => {
+      if (!Number.isFinite(val)) {
+        return;
+      }
+      if (!isConnected.value) {
+        return;
+      }
+      if (val === lastPublishedTestValue) {
+        return;
+      }
+      publishTestValue(val);
+      lastPublishedTestValue = val;
+    },
+  );
 }
 
-const ensureTestTopicSubscription = () => {
-  if (!mainStore.isConnected) {
-    return;
-  }
-  subscribeToTopic(testTopicName, testTopicType);
-  if (testTopicIndex !== -1) {
-    const currentValue = configurations.value[testTopicIndex];
-    if (Number.isFinite(currentValue)) {
-      publishTestValue(currentValue);
-      lastPublishedTestValue = currentValue;
-    }
-  }
+const subscribeAll = () => {
+  subscribeToTopic(CONFIG_FEEDBACK_TOPIC, undefined, { maxUpdateRate: 5 });
+  subscribeToTopic(ROBOT_SPEED_TOPIC, undefined, { maxUpdateRate: 20 });
+  subscribeToTopic(ROBOT_STEERING_TOPIC, undefined, { maxUpdateRate: 20 });
+  subscribeToTopic(TEST_TOPIC, undefined, { maxUpdateRate: 5 });
+  publishInt16(CONFIG_REQUEST_TOPIC, 0);
 };
 
-// Functions for ROS communication
-const setupRosSubscribers = () => {
-  if (!mainStore.isConnected || !mainStore.configListener) {
-    console.warn("ROS not connected or listeners not initialized.");
-    return;
-  }
-
-  mainStore.configListener.subscribe(msg => {
-    const received = msg.data.slice(0, configurationNames.length);
-    while (received.length < configurationNames.length) {
-      received.push(0);
-    }
-
-    if (testTopicIndex !== -1) {
-      const incomingTestValue = received[testTopicIndex];
-      if (Number.isFinite(incomingTestValue)) {
-        lastPublishedTestValue = incomingTestValue;
-      }
-    }
-
-    configurations.value = received;
-    console.log("Received configuration from ROS:", msg.data);
-  });
-
-  mainStore.robotVelInfoSubscriber.subscribe(msg => {
-    robotVelocity.value = msg.data;
-  });
-
-  mainStore.robotSteeringSubscriber.subscribe(msg => {
-    robotSteering.value = msg.data;
-  });
+const unsubscribeAll = () => {
+  unsubscribeFromTopic(CONFIG_FEEDBACK_TOPIC);
+  unsubscribeFromTopic(ROBOT_SPEED_TOPIC);
+  unsubscribeFromTopic(ROBOT_STEERING_TOPIC);
+  unsubscribeFromTopic(TEST_TOPIC);
 };
-
-const cleanupRosSubscribers = () => {
-  if (mainStore.configListener) mainStore.configListener.unsubscribe();
-  if (mainStore.robotVelSubscriber) mainStore.robotVelSubscriber.unsubscribe();
-  if (mainStore.robotSteeringSubscriber) mainStore.robotSteeringSubscriber.unsubscribe();
-  if (mainStore.robotVelInfoSubscriber) mainStore.robotVelInfoSubscriber.unsubscribe();
-};
-
 
 const onSaveConfiguration = () => {
-  if (mainStore.topicConfiguration) {
-    mainStore.topicConfiguration.publish({ data: configurations.value });
-    console.log("Published configuration:", configurations.value);
-  } else {
-    console.warn("Configuration topic not initialized.");
-  }
+  publishFloat32MultiArray(CONFIG_COMMAND_TOPIC, configurations.value);
 };
 
 const onResetConfig = () => {
   configurations.value = Array(configurationNames.length).fill(0);
-  if (mainStore.topicConfiguration) {
-    mainStore.topicConfiguration.publish({ data: configurations.value });
-    console.log("Reset configuration to zeros");
-  } else {
-    console.warn("Configuration topic not initialized.");
-  }
+  publishFloat32MultiArray(CONFIG_COMMAND_TOPIC, configurations.value);
 };
 
-// Keyboard controls for velocity and steering
 let uiTargetVelocity = 0;
 let uiTargetSteering = 0;
 
-const handleKeyDown = (event) => {
-  if (!mainStore.topicVelocityAndSteering) {
-    console.warn("Velocity and Steering topic not initialized.");
-    return;
-  }
+const publishVelocityCommand = () => {
+  publishFloat32MultiArray(VELOCITY_COMMAND_TOPIC, [uiTargetVelocity, uiTargetSteering]);
+};
 
+const handleKeyDown = (event) => {
   switch (event.key) {
-    case 'w': uiTargetVelocity += 0.1; break;
-    case 's': uiTargetVelocity -= 0.1; break;
-    case 'j': uiTargetVelocity = 2.0; break;
-    case 'g': uiTargetVelocity = -1.0; break;
-    case 'm': uiTargetSteering -= 0.1; break;
-    case 'n': uiTargetSteering = 0.0; break;
-    case 'b': uiTargetSteering += 0.1; break;
+    case 'w':
+      uiTargetVelocity += 0.1;
+      break;
+    case 's':
+      uiTargetVelocity -= 0.1;
+      break;
+    case 'j':
+      uiTargetVelocity = 2.0;
+      break;
+    case 'g':
+      uiTargetVelocity = -1.0;
+      break;
+    case 'm':
+      uiTargetSteering -= 0.1;
+      break;
+    case 'n':
+      uiTargetSteering = 0.0;
+      break;
+    case 'b':
+      uiTargetSteering += 0.1;
+      break;
     case ' ':
       uiTargetVelocity = 0.0;
       uiTargetSteering = 0.0;
       break;
     case 'Enter':
       onSaveConfiguration();
-      return; // Don't publish velocity/steering for Enter
+      return;
+    default:
+      return;
   }
-  mainStore.topicVelocityAndSteering.publish({ data: [uiTargetVelocity, uiTargetSteering] });
+  publishVelocityCommand();
 };
 
-// Lifecycle hooks
 onMounted(() => {
-  // Add keyboard listener
   window.addEventListener('keydown', handleKeyDown);
 
-  // Watch for ROS connection status
-  watch(isConnected, (newVal) => {
-    if (newVal) {
-      setupRosSubscribers();
-      ensureTestTopicSubscription();
-    } else {
-      cleanupRosSubscribers();
-      unsubscribeFromTopic(testTopicName);
-      lastPublishedTestValue = null;
-    }
-  }, { immediate: true }); // Run immediately to check initial connection
+  watch(
+    isConnected,
+    (connected) => {
+      if (connected) {
+        subscribeAll();
+      } else {
+        unsubscribeAll();
+        lastPublishedTestValue = null;
+      }
+    },
+    { immediate: true },
+  );
 });
 
 onUnmounted(() => {
-  cleanupRosSubscribers();
   window.removeEventListener('keydown', handleKeyDown);
-  unsubscribeFromTopic(testTopicName);
+  unsubscribeAll();
 });
 </script>

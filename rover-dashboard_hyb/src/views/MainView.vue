@@ -3,8 +3,11 @@
     <div class="mb-4 flex flex-col md:flex-row gap-2">
       <!-- ROS Status -->
       <div class="flex-1 p-4 border rounded-lg shadow-md bg-white">
-        <h2 class="text-xl text-black font-semibold mb-2">ROS Status</h2>
-        <p class="text-xl text-black">IP: {{ mainStore.server }} || PORT: 9090</p>
+        <h2 class="text-xl text-black font-semibold mb-2">ROSboard Status</h2>
+        <p class="text-xl text-black">
+          Host: {{ rosboardStore.host || mainStore.server || '—' }} ||
+          Port: {{ rosboardStore.port || '—' }}
+        </p>
         <p class="text-xl" :class="{ 'text-green-600': mainStore.status === 'Connected', 'text-red-600': mainStore.status === 'Disconnected', 'text-gray-600': mainStore.status === null }">
           Status: {{ mainStore.status || 'Not Connected' }} - {{ mainStore.message }}
         </p>
@@ -42,20 +45,20 @@
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-800">
                 <tr>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Topic</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Type</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Message</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Topic</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Type</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Message</th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr v-for="[topicName, topicType] in mainStore.topics" :key="topicName">
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ topicName }}</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ topicType }}</td>
-                  <td class="px-6 py-4 text-sm text-gray-500">
-                    <div v-if="mainStore.messages.has(topicName)" class="max-h-20 overflow-y-auto bg-gray-50 p-2 rounded-md">
+                  <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ topicName }}</td>
+                  <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ topicType }}</td>
+                  <td class="px-4 py-4 text-sm text-gray-500">
+                    <div v-if="mainStore.messages.has(topicName)" class="max-h-24 overflow-y-auto bg-gray-50 p-2 rounded-md">
                       <pre class="text-xs">{{ JSON.stringify(mainStore.messages.get(topicName), null, 2) }}</pre>
                     </div>
-                    <div v-else>No message yet</div>
+                    <div v-else class="text-xs text-gray-400">Belum ada pesan</div>
                   </td>
                 </tr>
               </tbody>
@@ -68,66 +71,133 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useMainStore } from '../stores/store.js';
+import { useRosboardStore } from '../stores/rosboard.js';
 import { useROS } from '../composables/useRos.js';
 import NetworkDisplay from '../components/NetworkDisplay.vue';
 const mainStore = useMainStore();
+const rosboardStore = useRosboardStore();
 const {
-  initializeROS,
   startMonitoring,
+  isConnected,
+  subscribeToTopic,
+  unsubscribeFromTopic,
 } = useROS();
 
 const robotVelocity = ref(0.0);
 const robotSteering = ref(0.0);
+const subscribedTopics = ref(new Set());
 
-// setup subscribers 
-const setupRosSubscribers = () => {
-  if (!mainStore.isConnected || !mainStore.robotVelInfoSubscriber || !mainStore.robotSteeringSubscriber) {
-    return;
+const ROBOT_SPEED_TOPIC = '/master/target_speed';
+const ROBOT_STEERING_TOPIC = '/master/target_steering';
+
+const robotVelocityMessage = computed(() => mainStore.messages.get(ROBOT_SPEED_TOPIC));
+const robotSteeringMessage = computed(() => mainStore.messages.get(ROBOT_STEERING_TOPIC));
+
+watch(robotVelocityMessage, (msg) => {
+  const value = msg?.data;
+  if (typeof value === 'number') {
+    robotVelocity.value = value;
   }
-  mainStore.robotVelInfoSubscriber.subscribe(msg => {
-    robotVelocity.value = msg.data;
-  });
-  mainStore.robotSteeringSubscriber.subscribe(msg => {
-    robotSteering.value = msg.data;
+}, { immediate: true });
+
+watch(robotSteeringMessage, (msg) => {
+  const value = msg?.data;
+  if (typeof value === 'number') {
+    robotSteering.value = value;
+  }
+}, { immediate: true });
+
+const subscribeAll = () => {
+  ensureTopicSubscribed(ROBOT_SPEED_TOPIC, { maxUpdateRate: 15 });
+  ensureTopicSubscribed(ROBOT_STEERING_TOPIC, { maxUpdateRate: 15 });
+  mainStore.topics.forEach((type, name) => {
+    if (isCameraTopic(name, type)) {
+      return;
+    }
+    ensureTopicSubscribed(name, { maxUpdateRate: 10 });
   });
 };
 
-const cleanupRosSubscribers = () => {
-  if (mainStore.robotVelInfoSubscriber) mainStore.robotVelInfoSubscriber.unsubscribe();
-  if (mainStore.robotSteeringSubscriber) mainStore.robotSteeringSubscriber.unsubscribe();
+const unsubscribeAll = () => {
+  subscribedTopics.value.forEach((topicName) => {
+    unsubscribeFromTopic(topicName);
+    mainStore.removeTopicMessage(topicName);
+  });
+  subscribedTopics.value = new Set();
 };
 
 onMounted(() => {
-  // use default localhost if no server is set
-  if (!mainStore.server) {
-    initializeROS('127.0.0.1', 9090);
-  }
-
   startMonitoring();
 
-  // setup subscriber listener
-  if (mainStore.isConnected) {
-    setupRosSubscribers();
+  if (isConnected.value) {
+    subscribeAll();
   }
-  watch(() => mainStore.isConnected, (val) => {
-    if (val) {
-      setupRosSubscribers();
+
+  watch(isConnected, (connected) => {
+    if (connected) {
+      subscribeAll();
     } else {
-      cleanupRosSubscribers();
+      unsubscribeAll();
     }
   }, { immediate: true });
 });
 
-
 onUnmounted(() => {
-  cleanupRosSubscribers();
+  unsubscribeAll();
 });
 
-// This function renders a nested list recursively for messages
-// Using JSON.stringify for now for simplicity in display
-const renderMessage = (data) => {
-  return data; 
+watch(
+  () => mainStore.topics,
+  (topicsMap) => {
+    const desiredTopics = new Set(topicsMap.keys());
+    desiredTopics.add(ROBOT_SPEED_TOPIC);
+    desiredTopics.add(ROBOT_STEERING_TOPIC);
+
+    desiredTopics.forEach((topicName) => {
+      const topicType = topicsMap.get(topicName);
+      if (isCameraTopic(topicName, topicType)) {
+        return;
+      }
+      const options = topicName === ROBOT_SPEED_TOPIC || topicName === ROBOT_STEERING_TOPIC
+        ? { maxUpdateRate: 15 }
+        : { maxUpdateRate: 10 };
+      ensureTopicSubscribed(topicName, options);
+    });
+
+    const next = new Set(subscribedTopics.value);
+    Array.from(next).forEach((topic) => {
+      if (!desiredTopics.has(topic)) {
+        unsubscribeFromTopic(topic);
+        next.delete(topic);
+        mainStore.removeTopicMessage(topic);
+      }
+    });
+    subscribedTopics.value = next;
+  },
+  { deep: true },
+);
+
+const ensureTopicSubscribed = (topicName, options = {}) => {
+  const trimmed = topicName?.trim();
+  if (!trimmed || subscribedTopics.value.has(trimmed)) {
+    return;
+  }
+  subscribeToTopic(trimmed, mainStore.topics.get(trimmed), options);
+  const next = new Set(subscribedTopics.value);
+  next.add(trimmed);
+  subscribedTopics.value = next;
+};
+
+const isCameraTopic = (topicName, topicType) => {
+  const name = topicName?.toLowerCase() ?? '';
+  const type = topicType?.toLowerCase() ?? '';
+  return name.includes("image") || name.includes("camera") ||
+    type.includes("sensor_msgs/msg/image") ||
+    type.includes("sensor_msgs/msg/compressedimage") ||
+    type.includes("sensor_msgs/image") ||
+    type.includes("sensor_msgs/compressedimage") ||
+    type.includes("theora_image_transport");
 };
 </script>

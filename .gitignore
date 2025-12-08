@@ -1,0 +1,5 @@
+# Exclude joystick UDP bridge package
+udp_joystick_udp_bridge/
+
+# Exclude video recordings
+*.mp4

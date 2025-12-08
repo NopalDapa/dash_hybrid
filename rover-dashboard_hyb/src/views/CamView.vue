@@ -77,7 +77,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import VideoStreamCard from '../components/VideoStreamCard.vue';
 import StreamController from '../components/StreamController.vue';
 import { useRosboardStore } from '../stores/rosboard.js';
@@ -90,11 +90,6 @@ onMounted(() => {
   if (rosboardStore.isConfigured) {
     rosboardStore.ensureConnected();
   }
-});
-
-onBeforeUnmount(() => {
-  rosboardStore.setDisconnectWhenIdle(true);
-  rosboardStore.disconnectIfIdle();
 });
 
 const statusLabel = computed(() => {

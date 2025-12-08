@@ -1,0 +1,22 @@
+[0.630s] Invoking command in '/home/nopal/dash_hybrid (1)/rosboard-main': PYTHONPATH=/home/nopal/dash_hybrid (1)/rosboard-main/build/rosboard/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/nopal/dash_hybrid (1)/rosboard-main/install/rosboard/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base build/rosboard build --build-base /home/nopal/dash_hybrid (1)/rosboard-main/build/rosboard/build install --record /home/nopal/dash_hybrid (1)/rosboard-main/build/rosboard/install.log --single-version-externally-managed install_data
+[0.820s] running egg_info
+[0.820s] writing build/rosboard/rosboard.egg-info/PKG-INFO
+[0.822s] writing dependency_links to build/rosboard/rosboard.egg-info/dependency_links.txt
+[0.822s] writing entry points to build/rosboard/rosboard.egg-info/entry_points.txt
+[0.823s] writing requirements to build/rosboard/rosboard.egg-info/requires.txt
+[0.823s] writing top-level names to build/rosboard/rosboard.egg-info/top_level.txt
+[0.825s] reading manifest file 'build/rosboard/rosboard.egg-info/SOURCES.txt'
+[0.825s] adding license file 'LICENSE'
+[0.826s] writing manifest file 'build/rosboard/rosboard.egg-info/SOURCES.txt'
+[0.826s] running build
+[0.826s] running build_py
+[0.830s] running install
+[0.830s] running install_lib
+[0.832s] running install_data
+[0.832s] running install_egg_info
+[0.833s] removing '/home/nopal/dash_hybrid (1)/rosboard-main/install/rosboard/lib/python3.10/site-packages/rosboard-1.3.1-py3.10.egg-info' (and everything under it)
+[0.834s] Copying build/rosboard/rosboard.egg-info to /home/nopal/dash_hybrid (1)/rosboard-main/install/rosboard/lib/python3.10/site-packages/rosboard-1.3.1-py3.10.egg-info
+[0.834s] running install_scripts
+[0.848s] Installing rosboard_node script to /home/nopal/dash_hybrid (1)/rosboard-main/install/rosboard/lib/rosboard
+[0.849s] writing list of installed files to '/home/nopal/dash_hybrid (1)/rosboard-main/build/rosboard/install.log'
+[0.865s] Invoked command in '/home/nopal/dash_hybrid (1)/rosboard-main' returned '0': PYTHONPATH=/home/nopal/dash_hybrid (1)/rosboard-main/build/rosboard/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/nopal/dash_hybrid (1)/rosboard-main/install/rosboard/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base build/rosboard build --build-base /home/nopal/dash_hybrid (1)/rosboard-main/build/rosboard/build install --record /home/nopal/dash_hybrid (1)/rosboard-main/build/rosboard/install.log --single-version-externally-managed install_data
