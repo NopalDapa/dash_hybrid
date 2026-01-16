@@ -5,6 +5,7 @@ import DebugView from '../views/DebugView.vue';
 import SlamView from '../views/SlamView.vue';
 import ConnectionView from '../views/ConnectionView.vue';
 import JoystickView from '../views/JoystickView.vue';
+import KonvaView from '../views/KonvaView.vue';
 
 const routes = [
   {
@@ -25,6 +26,11 @@ const routes = [
     path: '/camera',
     name: 'Camera',
     component: CameraView,
+  },
+  {
+    path: '/konva',
+    name: 'Konva',
+    component: KonvaView,
   },
   {
     path: '/configuration',
