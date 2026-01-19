@@ -29,7 +29,7 @@ ros2 run cam_min camera_publisher --ros-args
 
 # RoslibVue + Konva_ws
 
-term 1 (in rosboard-main)
+term 1 (in konva_ws)
 ```
 build and source
 ```
@@ -42,7 +42,7 @@ term 2
 ros2 launch rosbridge_server rosbridge_websocket_launch.xml address:=0.0.0.0 port:=9090
 ```
 
-term 3 ( to run frond end)
+term 3 ( in roslib_vue)
 ```
 npm install
 npm run dev
