@@ -2,6 +2,8 @@ import { computed, readonly, ref, watch } from 'vue';
 import { useMainStore } from '../stores/store';
 import { useRosboardStore } from '../stores/rosboard';
 
+const KONVA_WS_INSTALL_PATH = '/home/nopal/dash_hybrid_baru/konva_ws/install';
+
 let watchersInitialized = false;
 let monitorInterval = null;
 let cachedInvoke = null;
@@ -24,6 +26,19 @@ const ensureInvoke = async () => {
   }
 
   const rclnodejs = await import('rclnodejs');
+
+  // Ensure custom interfaces from our ROS2 overlay are discoverable even when
+  // the dashboard process wasn't launched from a sourced shell.
+  // rclnodejs relies on AMENT_PREFIX_PATH to locate message/interface packages.
+  if (typeof process !== 'undefined' && process?.env) {
+    const existing = process.env.AMENT_PREFIX_PATH || '';
+    const parts = existing.split(':').filter(Boolean);
+    if (!parts.includes(KONVA_WS_INSTALL_PATH)) {
+      parts.unshift(KONVA_WS_INSTALL_PATH);
+      process.env.AMENT_PREFIX_PATH = parts.join(':');
+    }
+  }
+
   if (!rclnodejs.isInitialized()) {
     await rclnodejs.init();
   }
@@ -297,6 +312,45 @@ export function useROS() {
     }
   };
 
+  const publishModeSwitch = async (topicName, enabled, mode) => {
+    const trimmedName = topicName?.trim();
+    if (!trimmedName) {
+      console.warn('Topic name required for publish.');
+      return;
+    }
+    const normalizedMode = String(mode ?? '').toLowerCase();
+    if (normalizedMode !== 'wheel' && normalizedMode !== 'arm') {
+      mainStore.setMessage(`Invalid mode for ${trimmedName}.`);
+      return;
+    }
+
+    try {
+      if (canUseTauri()) {
+        // No native command for custom msg publish yet.
+        // Fallback to JS rclnodejs path for now.
+        throw new Error('ModeSwitch publish not implemented for Tauri runtime');
+      }
+
+      const bridge = await ensureInvoke();
+      if (!bridge) {
+        throw new Error('ROS bridge unavailable');
+      }
+      const { node, rclnodejs } = bridge;
+      const publisherKey = `pub:${trimmedName}`;
+      if (!node[publisherKey]) {
+        node[publisherKey] = node.createPublisher('global_interfaces/msg/ModeSwitch', trimmedName);
+      }
+      const message = rclnodejs.createMessage('global_interfaces/msg/ModeSwitch', {
+        enabled: Boolean(enabled),
+        mode: normalizedMode,
+      });
+      node[publisherKey].publish(message);
+    } catch (error) {
+      console.error(`Failed to publish ${trimmedName}`, error);
+      mainStore.setMessage(`Failed to publish to ${trimmedName}.`);
+    }
+  };
+
   return {
     ros: readonly(rosPlaceholder),
     loading: readonly(mainStore.loading),
@@ -316,6 +370,7 @@ export function useROS() {
     publishFloat32MultiArray,
     publishTestValue,
     publishInt16,
+  publishModeSwitch,
     startMonitoring,
     stopMonitoring,
   };

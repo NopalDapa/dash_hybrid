@@ -1,6 +1,6 @@
 <template>
-  <div class="p-4 flex flex-col h-full">
-    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+  <div class="p-2 flex flex-col h-full">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
       <div>
         <p class="text-sm text-gray-700">
           Status ROSboard:
@@ -23,8 +23,10 @@
         Reconnect
       </button>
     </div>
-    <div class="flex flex-1">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 flex-grow">
+    
+    <!-- Main Grid Layout -->
+    <div class="flex flex-1 min-h-0 overflow-hidden">
+      <div class="grid grid-cols-3 grid-rows-2 gap-1 w-full h-full">
         <VideoStreamCard
           cardTitle="Camera 1"
           cardId="camera1"
@@ -61,16 +63,27 @@
           :isSelected="selectedCardId === 'camera6'"
           @card-selected="handleCardSelected"
         />
-        <VideoStreamCard
-          cardTitle="Camera 7"
-          cardId="camera7"
-          :isSelected="selectedCardId === 'camera7'"
-          @card-selected="handleCardSelected"
-        />
-        <!-- !TOBECHANGE more to go if needed -->
       </div>
-      <div v-if="selectedCardId" class="w-80 ml-4 p-4 border border-gray-300 rounded-lg shadow-md">
-        <StreamController :selectedCardId="selectedCardId" @close-controller="handleCloseController" />
+    </div>
+
+    <!-- Zoom Overlay -->
+    <div v-if="zoomedCardId" @click.self="closeZoom" class="fixed inset-0 z-50 bg-black bg-opacity-90 flex flex-col items-center justify-center">
+      <!-- Close Button - on top of everything -->
+      <button 
+        @click="closeZoom" 
+        class="fixed top-6 right-6 z-[100] w-16 h-16 flex items-center justify-center bg-black hover:bg-gray-800 text-white text-4xl font-black rounded-full shadow-2xl focus:outline-none border-2 border-white"
+      >
+        X
+      </button>
+      <div @click.self="closeZoom" class="relative w-full h-full flex flex-col bg-white overflow-hidden">
+        <div @click.self="closeZoom" class="flex-grow w-full h-full">
+          <VideoStreamCard
+            :cardTitle="zoomedCardId"
+            :cardId="zoomedCardId"
+            :isSelected="false"
+            :isZoomed="true"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -83,6 +96,7 @@ import StreamController from '../components/StreamController.vue';
 import { useRosboardStore } from '../stores/rosboard.js';
 
 const selectedCardId = ref(null);
+const zoomedCardId = ref(null);
 const rosboardStore = useRosboardStore();
 
 onMounted(() => {
@@ -126,6 +140,11 @@ const statusClass = computed(() => {
 
 const handleCardSelected = (cardId) => {
   selectedCardId.value = cardId;
+  zoomedCardId.value = cardId; // Auto zoom when clicked
+};
+
+const closeZoom = () => {
+  zoomedCardId.value = null;
 };
 
 const handleCloseController = () => {

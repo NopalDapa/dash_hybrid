@@ -22,6 +22,8 @@ public:
   rclcpp::Publisher<geometry_msgs::msg::Pose2D>::SharedPtr pose_pub_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
   rclcpp::Publisher<global_interfaces::msg::RobotState>::SharedPtr state_pub_;
+  // NOTE: /mode_switch ownership is on the UI side (dashboard) so we don't
+  // continuously override user-selected mode from here.
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_out_pub_;
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_out_pub_;
 
@@ -60,6 +62,7 @@ public:
 
     state_pub_ = this->create_publisher<global_interfaces::msg::RobotState>(
         "/robot_state", 10);
+
 
     // bridge UI teleop -> robot command
     cmd_out_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
@@ -193,6 +196,7 @@ private:
     state_msg.omega = twist.angular.z;
 
     state_pub_->publish(state_msg);
+
   }
 };
 

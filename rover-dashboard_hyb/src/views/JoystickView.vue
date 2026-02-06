@@ -24,7 +24,7 @@
             <h3 class="text-lg font-medium text-gray-800">Axes:</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
               <div v-for="(axis, aIndex) in gamepad.axes" :key="aIndex" class="flex items-center">
-                <span class="w-16 text-gray-600">Axis {{ aIndex }}:</span>
+                <span class="w-24 text-gray-600 font-medium capitalize">{{ getAxisLabel(aIndex) }}:</span>
                 <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
                   <div class="bg-blue-600 h-2.5 rounded-full" :style="{ width: ((axis + 1) / 2 * 100) + '%' }"></div>
                 </div>
@@ -37,7 +37,7 @@
             <h3 class="text-lg font-medium text-gray-800">Buttons:</h3>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mt-2">
               <div v-for="(button, bIndex) in gamepad.buttons" :key="bIndex" class="flex items-center space-x-2">
-                <span class="text-gray-600">Button {{ bIndex }}:</span>
+                <span class="text-gray-600 min-w-[80px] capitalize">{{ getButtonLabel(bIndex) }}:</span>
                 <div :class="['w-5 h-5 rounded-full', button.pressed ? 'bg-green-500' : 'bg-gray-300']"></div>
                 <span class="text-gray-800">{{ button.pressed ? 'Pressed' : 'Released' }}</span>
               </div>
@@ -82,4 +82,34 @@
 import { useJoystick } from '../composables/useJoystick';
 
 const { gamepads, isConnected } = useJoystick();
+
+const buttonNames = {
+  0: 'x',
+  1: 'lingkaran',
+  2: 'kotak',
+  3: 'segitiga',
+  4: 'L1',
+  5: 'R1',
+  6: 'L2',
+  7: 'R2',
+  8: 'share',
+  9: 'option',
+  10: 'L3',
+  11: 'R3',
+  12: 'arrow up',
+  13: 'arrow down',
+  14: 'arrow left',
+  15: 'arrow right',
+  16: 'logo ps'
+};
+
+const getButtonLabel = (index) => {
+  return buttonNames[index] || `Button ${index}`;
+};
+
+const getAxisLabel = (index) => {
+  if (index === 4) return 'L2';
+  if (index === 5) return 'R2';
+  return `Axis ${index}`;
+};
 </script>

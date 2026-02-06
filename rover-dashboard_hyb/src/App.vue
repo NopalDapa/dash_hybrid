@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen w-full flex flex-col bg-gray-100">
+  <div class="h-screen w-full flex flex-col bg-gray-100 overflow-hidden">
     <nav v-if="isConnected" class="bg-gray-100 p-4 flex items-center justify-between px-6"> 
       <div class="flex flex-grow justify-evenly mr-8">
         <router-link
@@ -9,6 +9,13 @@
           exact-active-class="font-bold text-purple-600 after:scale-x-100"
         >
           Check Data
+          <span
+            class="mt-1 inline-flex items-center gap-2 rounded border px-2 py-0.5 text-lg font-semibold leading-tight"
+            :class="modeBadgeClasses"
+          >
+            <span class="text-lg font-semibold">mode</span>
+            <span>{{ modeLabel }}</span>
+          </span>
         </router-link>
         <router-link
           to="/camera"
@@ -60,18 +67,34 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 import { useROS } from './composables/useRos';
+import { useModeStatus } from './composables/useModeStatus';
 import { useMainStore } from './stores/store';
 import { useRosboardStore } from './stores/rosboard';
 import { useRouter } from 'vue-router';
 import { useJoystick } from './composables/useJoystick'; // Import the new composable
+import { useModeSwitchStore } from './stores/modeSwitch';
 
 const { isConnected, initializeROS } = useROS();
+const { label: modeLabel, badgeClasses: modeBadgeClasses } = useModeStatus({ topicName: '/mode_switch' });
 const mainStore = useMainStore();
 const rosboardStore = useRosboardStore();
+const modeSwitchStore = useModeSwitchStore();
 const router = useRouter();
 useJoystick(); // Initialize the joystick composable globally
+
+watch(
+  isConnected,
+  (connected) => {
+    // If we just connected and haven't received/published anything yet,
+    // default the UI state to wheel even without a joystick.
+    if (connected && modeSwitchStore.mode == null) {
+      modeSwitchStore.setMode(true, 'wheel');
+    }
+  },
+  { immediate: true },
+);
 
 onMounted(() => {
   const storedHost = localStorage.getItem('rosboardHost');
