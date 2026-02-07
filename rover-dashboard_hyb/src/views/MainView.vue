@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 h-full">
+  <div class="p-4 h-full overflow-y-auto">
     <div class="mb-4 flex flex-col md:flex-row gap-2">
       <!-- ROS Status -->
       <div class="flex-1 p-4 border rounded-lg shadow-md bg-white">
@@ -26,9 +26,7 @@
       </div>
     </div>
 
-
-    <div class="flex flex-col md:flex-row gap-1 mt-2 h-[calc(100%-120px-theme('height.96'))]"></div>
-    <div class="flex flex-col md:flex-row gap-1 mt-2 h-[calc(100%-120px-theme('height.96'))]">
+    <div class="flex flex-col md:flex-row gap-2 mt-2">
       <div class="md:w-1/5 flex flex-col gap-2">
         <div class="p-4 border rounded-lg shadow-md bg-white flex-grow">
           <h2 class="text-xl text-black font-semibold mb-4">ROS Nodes ({{ mainStore.nodes.length }})</h2>
