@@ -149,6 +149,11 @@ onUnmounted(() => {
 watch(
   () => mainStore.topics,
   (topicsMap) => {
+    // Don't subscribe if not connected - prevents auto-reconnect on disconnect
+    if (!isConnected.value) {
+      return;
+    }
+    
     const desiredTopics = new Set(topicsMap.keys());
     desiredTopics.add(ROBOT_SPEED_TOPIC);
     desiredTopics.add(ROBOT_STEERING_TOPIC);

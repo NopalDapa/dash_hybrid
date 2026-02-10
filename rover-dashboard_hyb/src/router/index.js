@@ -54,4 +54,26 @@ const router = createRouter({
   routes,
 });
 
+// Protected routes that require connection
+const protectedRoutes = ['/data', '/camera', '/konva', '/configuration', '/slam', '/joystick'];
+
+router.beforeEach((to, from, next) => {
+  // Check if the route requires authentication
+  if (protectedRoutes.includes(to.path)) {
+    // Import is done dynamically to avoid circular dependency
+    import('../stores/rosboard.js').then(({ useRosboardStore }) => {
+      const rosboardStore = useRosboardStore();
+
+      // If not connected, redirect to connect page
+      if (rosboardStore.status !== 'connected') {
+        next('/connect');
+      } else {
+        next();
+      }
+    });
+  } else {
+    next();
+  }
+});
+
 export default router;

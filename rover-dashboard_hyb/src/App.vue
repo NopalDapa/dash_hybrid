@@ -97,14 +97,12 @@ watch(
 );
 
 onMounted(() => {
-  const storedHost = localStorage.getItem('rosboardHost');
-  const storedPort = localStorage.getItem('rosboardPort');
-  if (storedHost && storedPort && !isConnected.value) {
-    initializeROS(storedHost, storedPort);
-  }
+  // Auto-connect disabled - users should manually click connect button
+  // This allows them to modify IP/host before connecting
 });
 
 const disconnectRos = () => {
+  rosboardStore.clearAllSubscriptions();
   rosboardStore.disconnect(false);
   mainStore.clearAllData();
   router.push('/connect');
