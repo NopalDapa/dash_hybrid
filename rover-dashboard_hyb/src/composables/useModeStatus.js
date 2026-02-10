@@ -1,4 +1,4 @@
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRosboardStore } from '../stores/rosboard';
 import { useModeSwitchStore } from '../stores/modeSwitch';
 
@@ -84,8 +84,20 @@ export function useModeStatus(options = {}) {
 
     // populate immediately if already cached
     updateFromPayload(rosboardStore.latestMessages?.[topicName]);
-  updateFromLocal();
+    updateFromLocal();
   });
+
+  // Also watch local store changes to update UI immediately
+  watch(
+    () => [modeStore.enabled, modeStore.mode],
+    () => {
+      const payload = rosboardStore.latestMessages?.[topicName];
+      if (!payload) {
+        updateFromLocal();
+      }
+    },
+    { immediate: true }
+  );
 
   onBeforeUnmount(() => {
     if (stop) {

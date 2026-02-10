@@ -25,14 +25,7 @@
         >
           Camera
         </router-link>
-        <router-link
-          to="/konva"
-          class="text-lg font-medium text-gray-700 hover:text-purple-600 relative px-2 pb-1 router-link flex flex-col items-center w-full"
-          active-class="font-bold text-purple-600 after:content-[''] after:block after:w-full after:h-1 after:bg-purple-600 after:rounded after:mt-1 after:transition-transform after:scale-x-100 after:origin-left"
-          exact-active-class="font-bold text-purple-600 after:scale-x-100"
-        >
-          Konva
-        </router-link>
+
         <router-link
           to="/configuration"
           class="text-lg font-medium text-gray-700 hover:text-purple-600 relative px-2 pb-1 router-link flex flex-col items-center w-full"

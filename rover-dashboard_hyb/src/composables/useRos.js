@@ -238,8 +238,8 @@ export function useROS() {
       }
       mainStore.setMessage(`Published ${topicName}`);
     } catch (error) {
-      console.error(`Failed to publish ${topicName}`, error);
-      mainStore.setMessage(`Failed to publish to ${topicName}.`);
+      /*console.error(`Failed to publish ${topicName}`, error);
+      mainStore.setMessage(`Failed to publish to ${topicName}.`);*/
     }
   };
 
@@ -273,8 +273,8 @@ export function useROS() {
       }
       mainStore.setMessage(`Published /test value: ${Math.trunc(numericValue)}`);
     } catch (error) {
-      console.error('Failed to publish /test value', error);
-      mainStore.setMessage('Failed to publish /test value.');
+      /*console.error('Failed to publish /test value', error);
+      mainStore.setMessage('Failed to publish /test value.');*/
     }
   };
 
@@ -307,8 +307,8 @@ export function useROS() {
         node[publisherKey].publish(message);
       }
     } catch (error) {
-      console.error(`Failed to publish ${topicName}`, error);
-      mainStore.setMessage(`Failed to publish to ${topicName}.`);
+      /*console.error(`Failed to publish ${topicName}`, error);
+      mainStore.setMessage(`Failed to publish to ${topicName}.`);*/
     }
   };
 
@@ -346,8 +346,8 @@ export function useROS() {
       });
       node[publisherKey].publish(message);
     } catch (error) {
-      console.error(`Failed to publish ${trimmedName}`, error);
-      mainStore.setMessage(`Failed to publish to ${trimmedName}.`);
+      /*console.error(`Failed to publish ${trimmedName}`, error);
+      mainStore.setMessage(`Failed to publish to ${trimmedName}.`);*/
     }
   };
 
@@ -370,7 +370,7 @@ export function useROS() {
     publishFloat32MultiArray,
     publishTestValue,
     publishInt16,
-  publishModeSwitch,
+    publishModeSwitch,
     startMonitoring,
     stopMonitoring,
   };

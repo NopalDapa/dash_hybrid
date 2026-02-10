@@ -35,19 +35,15 @@ export function useJoystick() {
     const currentGamepads = navigator.getGamepads();
     gamepads.value = Array.from(currentGamepads).filter((gp) => gp !== null);
 
-    if (
-      isConnected.value &&
-      gamepads.value.length > 0 &&
-      timestamp - lastPublish >= PUBLISH_INTERVAL_MS
-    ) {
+    if (isConnected.value && gamepads.value.length > 0) {
       const gamepad = gamepads.value[0];
 
-      // Toggle mode on rising-edge of X button
+      // Toggle mode on rising-edge of X button - Check EVERY FRAME for responsiveness
       const xPressed = Boolean(gamepad.buttons?.[BUTTON_X_INDEX]?.pressed);
       if (xPressed && !lastXPressed) {
         currentMode = currentMode === 'wheel' ? 'arm' : 'wheel';
         publishModeSwitch(MODE_SWITCH_TOPIC, true, currentMode);
-  modeStore.setMode(true, currentMode);
+        modeStore.setMode(true, currentMode);
 
         // Once the user has explicitly switched to arm at least once,
         // stop spamming defaults and only publish on toggles.
@@ -61,14 +57,17 @@ export function useJoystick() {
       // This helps downstream consumers latch an initial state even when they connect late.
       if (bootstrapSpamActive && currentMode === 'wheel') {
         publishModeSwitch(MODE_SWITCH_TOPIC, true, 'wheel');
-  modeStore.setMode(true, 'wheel');
+        modeStore.setMode(true, 'wheel');
       }
 
-      const data = [];
-      gamepad.axes.forEach((axis) => data.push(axis));
-      gamepad.buttons.forEach((button) => data.push(button.pressed ? 1.0 : 0.0));
-      publishFloat32MultiArray(JOYSTICK_TOPIC, data);
-      lastPublish = timestamp;
+      // Publish axes but throttled
+      if (timestamp - lastPublish >= PUBLISH_INTERVAL_MS) {
+        const data = [];
+        gamepad.axes.forEach((axis) => data.push(axis));
+        gamepad.buttons.forEach((button) => data.push(button.pressed ? 1.0 : 0.0));
+        publishFloat32MultiArray(JOYSTICK_TOPIC, data);
+        lastPublish = timestamp;
+      }
     }
 
     animationFrameId = window.requestAnimationFrame(pollGamepads);
@@ -92,10 +91,10 @@ export function useJoystick() {
   watch(isConnected, (connected) => {
     if (!connected) {
       lastPublish = 0;
-  lastXPressed = false;
+      lastXPressed = false;
       currentMode = 'wheel';
-  bootstrapSpamActive = true;
-  modeStore.reset();
+      bootstrapSpamActive = true;
+      modeStore.reset();
       return;
     }
   });

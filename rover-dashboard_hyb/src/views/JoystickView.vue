@@ -100,7 +100,7 @@ const buttonNames = {
   13: 'arrow down',
   14: 'arrow left',
   15: 'arrow right',
-  16: 'logo ps'
+  16: 'home'
 };
 
 const getButtonLabel = (index) => {

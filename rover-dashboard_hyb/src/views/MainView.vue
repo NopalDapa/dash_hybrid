@@ -20,7 +20,6 @@
         <h2 class="text-xl text-black font-semibold mb-2">Robot Info</h2>
         <div class="space-y-2">
           <p class="text-black"><strong>Velocity:</strong> <span id="info-velocity">{{ robotVelocity.toFixed(2) }}</span> m/s</p>
-          <p class="text-black"><strong>Steering:</strong> <span id="info-steering">{{ robotSteering.toFixed(2) }}</span> rad</p>
           <p class="text-black"><strong>Lookahead:</strong> <span id="info-lookahead">0.0</span> m</p>
         </div>
       </div>
@@ -84,14 +83,11 @@ const {
 } = useROS();
 
 const robotVelocity = ref(0.0);
-const robotSteering = ref(0.0);
 const subscribedTopics = ref(new Set());
 
 const ROBOT_SPEED_TOPIC = '/master/target_speed';
-const ROBOT_STEERING_TOPIC = '/master/target_steering';
 
 const robotVelocityMessage = computed(() => mainStore.messages.get(ROBOT_SPEED_TOPIC));
-const robotSteeringMessage = computed(() => mainStore.messages.get(ROBOT_STEERING_TOPIC));
 
 watch(robotVelocityMessage, (msg) => {
   const value = msg?.data;
@@ -100,16 +96,8 @@ watch(robotVelocityMessage, (msg) => {
   }
 }, { immediate: true });
 
-watch(robotSteeringMessage, (msg) => {
-  const value = msg?.data;
-  if (typeof value === 'number') {
-    robotSteering.value = value;
-  }
-}, { immediate: true });
-
 const subscribeAll = () => {
   ensureTopicSubscribed(ROBOT_SPEED_TOPIC, { maxUpdateRate: 15 });
-  ensureTopicSubscribed(ROBOT_STEERING_TOPIC, { maxUpdateRate: 15 });
   mainStore.topics.forEach((type, name) => {
     if (isCameraTopic(name, type)) {
       return;
@@ -156,14 +144,13 @@ watch(
     
     const desiredTopics = new Set(topicsMap.keys());
     desiredTopics.add(ROBOT_SPEED_TOPIC);
-    desiredTopics.add(ROBOT_STEERING_TOPIC);
 
     desiredTopics.forEach((topicName) => {
       const topicType = topicsMap.get(topicName);
       if (isCameraTopic(topicName, topicType)) {
         return;
       }
-      const options = topicName === ROBOT_SPEED_TOPIC || topicName === ROBOT_STEERING_TOPIC
+      const options = topicName === ROBOT_SPEED_TOPIC
         ? { maxUpdateRate: 15 }
         : { maxUpdateRate: 10 };
       ensureTopicSubscribed(topicName, options);
